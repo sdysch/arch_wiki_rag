@@ -1,45 +1,64 @@
+import logging
 import faiss
 import numpy as np
+import os
 
-dimension = 1536
-index = faiss.IndexFlatL2(dimension)
+logger = logging.getLogger(__name__)
 
-def add_vectors(vectors):
-    arr = np.array(vectors).astype('float32')
-    index.add(arr)
+DIMENSION = 1536
+INDEX_PATH = "data/faiss/index.bin"
 
-def search(query_vector, k=5):
-    D, I = index.search(np.array([query_vector], dtype='float32'), k)
-    return I
+index = faiss.IndexFlatIP(DIMENSION)
+vector_store: list[str] = []
 
-import numpy as np
-import faiss
 
-# === FAISS Index Setup ===
-DIMENSION = 1536  # Match your embedding model
-index = faiss.IndexFlatL2(DIMENSION)
-vector_store = []  # Optional: store text chunks corresponding to embeddings
+def load_index() -> None:
+    global index, vector_store
+    if os.path.exists(INDEX_PATH):
+        index = faiss.read_index(INDEX_PATH)
+        texts_path = INDEX_PATH.replace(".bin", "_texts.txt")
+        if os.path.exists(texts_path):
+            with open(texts_path, "r", encoding="utf-8") as f:
+                vector_store = f.read().split("\n|||split|||\n")
+        logger.info("Loaded index with %d vectors", index.ntotal)
 
-# === Embedding Function ===
+
+def save_index() -> None:
+    os.makedirs(os.path.dirname(INDEX_PATH), exist_ok=True)
+    faiss.write_index(index, INDEX_PATH)
+    texts_path = INDEX_PATH.replace(".bin", "_texts.txt")
+    with open(texts_path, "w", encoding="utf-8") as f:
+        f.write("\n|||split|||\n".join(vector_store))
+    logger.info("Saved index with %d vectors", index.ntotal)
+
+
 def embed_texts(texts: list[str]) -> list[np.ndarray]:
     """
     Convert a list of texts into embeddings.
     Replace this with your actual embedding model (OpenAI, bge-small, etc.)
     """
+    logger.debug("Embedding %d texts", len(texts))
     embeddings = []
     for text in texts:
-        # Placeholder: random embeddings for testing
-        emb = np.random.rand(DIMENSION).astype('float32')
+        emb = np.random.rand(DIMENSION).astype("float32")
+        emb = emb / np.linalg.norm(emb)
         embeddings.append(emb)
     return embeddings
 
+
 def add_vectors(vectors: list[np.ndarray], texts: list[str] | None = None) -> None:
-    """
-    Add embeddings to FAISS index.
-    Optionally store corresponding text chunks.
-    """
-    # Stack into 2D array
-    arr = np.stack(vectors).astype('float32')
+    arr = np.stack(vectors).astype("float32")
     index.add(arr)
     if texts:
         vector_store.extend(texts)
+    logger.debug("Added %d vectors to index", len(vectors))
+
+
+def search(query_vector: np.ndarray, k: int = 5) -> tuple[np.ndarray, np.ndarray]:
+    query = np.array([query_vector]).astype("float32")
+    distances, indices = index.search(query, k)
+    return distances, indices
+
+
+def get_texts(indices: np.ndarray) -> list[str]:
+    return [vector_store[i] for i in indices if i < len(vector_store)]
