@@ -1,14 +1,18 @@
 import logging
+import os
+
 import faiss
 import numpy as np
-import os
+from sentence_transformers import SentenceTransformer
 
 logger = logging.getLogger(__name__)
 
-DIMENSION = 1536
+DIMENSION = 384
 INDEX_PATH = "data/faiss/index.bin"
 
-index = faiss.IndexFlatIP(DIMENSION)
+model = SentenceTransformer("all-MiniLM-L6-v2")
+
+index: faiss.IndexFlatIP
 vector_store: list[str] = []
 
 
@@ -21,6 +25,8 @@ def load_index() -> None:
             with open(texts_path, "r", encoding="utf-8") as f:
                 vector_store = f.read().split("\n|||split|||\n")
         logger.info("Loaded index with %d vectors", index.ntotal)
+    else:
+        index = faiss.IndexFlatIP(DIMENSION)
 
 
 def save_index() -> None:
@@ -33,17 +39,9 @@ def save_index() -> None:
 
 
 def embed_texts(texts: list[str]) -> list[np.ndarray]:
-    """
-    Convert a list of texts into embeddings.
-    Replace this with your actual embedding model (OpenAI, bge-small, etc.)
-    """
     logger.debug("Embedding %d texts", len(texts))
-    embeddings = []
-    for text in texts:
-        emb = np.random.rand(DIMENSION).astype("float32")
-        emb = emb / np.linalg.norm(emb)
-        embeddings.append(emb)
-    return embeddings
+    embeddings = model.encode(texts, convert_to_numpy=True)
+    return [np.array(e, dtype=np.float32) for e in embeddings]
 
 
 def add_vectors(vectors: list[np.ndarray], texts: list[str] | None = None) -> None:

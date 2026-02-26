@@ -1,11 +1,17 @@
 import logging
 from arch_wiki_rag.rag.chunking import chunk_page
-from arch_wiki_rag.rag.embeddings import embed_texts, add_vectors, save_index
+from arch_wiki_rag.rag.embeddings import (
+    embed_texts,
+    add_vectors,
+    save_index,
+    load_index,
+)
 
 logger = logging.getLogger(__name__)
 
 
 def process_page(title: str) -> None:
+    load_index()
     chunks = chunk_page(title)
     if not chunks:
         logger.warning("No chunks found for %s", title)
