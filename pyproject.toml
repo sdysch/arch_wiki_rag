@@ -1,0 +1,34 @@
+[project]
+name = "arch-wiki-rag"
+version = "0.1.0"
+description = "RAG for Arch Linux wiki"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "beautifulsoup4>=4.14.3",
+    "faiss-cpu>=1.13.2",
+    "openai>=2.24.0",
+    "pytest>=9.0.2",
+    "requests>=2.32.5",
+    "rich>=14.3.3",
+    "ruff>=0.15.4",
+    "tqdm>=4.67.3",
+    "typer>=0.24.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.15.4",
+    "mypy>=1.5.1",
+]
+
+[project.scripts]
+arch_rag = "arch_wiki_rag.cli:cli"
+
+[build-system]
+requires = ["setuptools>=68.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["arch_wiki_rag*"]
