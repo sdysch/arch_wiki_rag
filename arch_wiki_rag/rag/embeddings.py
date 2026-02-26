@@ -61,4 +61,12 @@ def search(query_vector: np.ndarray, k: int = 5) -> tuple[np.ndarray, np.ndarray
 
 
 def get_texts(indices: np.ndarray) -> list[str]:
-    return [vector_store[i] for i in indices if i < len(vector_store)]
+    return [vector_store[i] for i in indices[0] if i < len(vector_store)]
+
+
+def query_index(query: str, k: int = 5) -> list[tuple[str, float]]:
+    load_index()
+    query_vector = embed_texts([query])[0]
+    distances, indices = search(query_vector, k=k)
+    results = get_texts(indices)
+    return [(r, distances[0][i]) for i, r in enumerate(results)]

@@ -25,10 +25,14 @@ uv sync
 
 ### Ingest a page
 ```bash
-uv run arch-rag ingest "Systemd"
+arch_rag ingest "Systemd"
+arch_rag ingest "Tmux"
+arch_rag ingest "Installation"
 ```
 
 ### Query the RAG system
+* Currently a dummy implementation
 ```bash
-uv run arch-rag query "How do I enable systemd-resolved?
+arch_rag query "How do I enable systemd-resolved?"
+arch_rag query "how to install arch" -k 10
 ```
